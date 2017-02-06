@@ -1,0 +1,6 @@
+[submodule "Catch"]
+	path = Catch
+	url = git@github.com:philsquared/Catch.git
+[submodule "hana"]
+	path = hana
+	url = http://github.com/boostorg/hana

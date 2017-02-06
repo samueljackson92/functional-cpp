@@ -24,3 +24,4 @@ References & Resources
  - [Functors, Applicatives, And Monads In Pictures](http://adit.io/posts/2013-04-17-functors,_applicatives,_and_monads_in_pictures.html)
  - [Boost.Hana](https://github.com/boostorg/hana)
  - [Eric Niebler's Rangesv3](https://ericniebler.github.io/std/wg21/D4128.html)
+ - [Jackie Kay: Stop calling "Function Objects" "Functors"](http://jackieokay.com/2017/01/26/functors.html)
