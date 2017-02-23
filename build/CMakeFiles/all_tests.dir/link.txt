@@ -1,0 +1,1 @@
+/usr/local/bin/g++-7   -std=c++1z -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/all_tests.dir/test.cpp.o  -o all_tests  
