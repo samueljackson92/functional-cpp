@@ -5,77 +5,7 @@
 #include <numeric>
 #include <functional>
 #include <range/v3/all.hpp>
-#include "composition.hpp"
-
-//------------------------------------------------------------------------------
-// Generic Functions for testing
-//------------------------------------------------------------------------------
-
-auto addThree (std::vector<int> v) -> std::vector<int> {
-    std::transform(v.begin(), v.end(), v.begin(),
-                   [](const auto val) { return val + 3; });
-    return v;
-}
-
-auto timeTwo (std::vector<int> v) -> std::vector<int> {
-    std::transform(v.begin(), v.end(), v.begin(),
-                   [](const auto val) { return val * 2; });
-    return v;
-}
-
-auto allToString (std::vector<int> v) -> std::vector<std::string> {
-    std::vector<std::string> s;
-    std::transform(v.begin(), v.end(), std::back_inserter(s),
-                   [](auto i) { return std::to_string(i); });
-    return s;
-}
-
-
-auto sum(const std::vector<int>& v) -> int {
-    return std::accumulate(v.begin(), v.end(), 0);
-};
-
-auto toString (const int & value) -> std::string {
-    return std::to_string(value);
-};
-
-auto plus3(int val) -> int { return val + 3; }
-
-auto almostInteger(const double value, const double tol = 1e-1) -> bool {
-    const double intVal = std::round(value);
-    return std::abs(intVal - value) < tol;
-}
-
-//------------------------------------------------------------------------------
-// HKL Functions for testing
-//------------------------------------------------------------------------------
-
-class IntegerHKL {
-    public:
-        IntegerHKL(int h, int k, int l) : m_hkl({h, k, l}) {}
-        auto H() const -> int { return m_hkl[0]; }
-        auto K() const -> int { return m_hkl[1]; }
-        auto L() const -> int { return m_hkl[2]; }
-    private:
-        std::array<int, 3> m_hkl;
-};
-
-class ProtoHKL {
-    public:
-        ProtoHKL(double h, double k, double l) : m_hkl({h, k, l}) {}
-        auto H() const -> double { return m_hkl[0]; }
-        auto K() const -> double { return m_hkl[1]; }
-        auto L() const -> double { return m_hkl[2]; }
-    private:
-        std::array<double, 3> m_hkl;
-};
-
-auto createProtoHKL(const std::vector<double>& hkl) -> decltype(auto) {
-    if (hkl.size() != 3)
-        return std::optional<ProtoHKL>();
-    
-    return std::make_optional(ProtoHKL(hkl[0], hkl[1], hkl[2]));
-}
+#include "functions.hpp"
 
 auto convertProtoToInteger(const ProtoHKL& proto) -> decltype(auto) {
     // check it's not all zero
@@ -120,7 +50,7 @@ TEST_CASE( "Higher Order", "[High]") {
 
 TEST_CASE( "Composition of Functions", "[composition]" ) {
 
-    auto pipeline = compose(toString, sum, addThree);
+    auto pipeline = hana::compose(toString, sum, addThree);
     std::vector<int> n = { 3, 4, 5 };
     auto x = pipeline(std::move(n)); 
 
@@ -129,7 +59,7 @@ TEST_CASE( "Composition of Functions", "[composition]" ) {
 
 TEST_CASE( "Slow Composition", "[Lazy]" ) {
     std::vector<int> n = { 3, 4, 5 };
-    auto f = compose(allToString, timeTwo, addThree);
+    auto f = hana::compose(allToString, timeTwo, addThree);
     auto xs = f(n);
     REQUIRE( xs[0] == "12" );
     REQUIRE( xs[1] == "14" );
