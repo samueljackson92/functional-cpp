@@ -1,1 +1,0 @@
-/usr/local/bin/g++-7   -std=c++1z -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/main.dir/main.cpp.o CMakeFiles/main.dir/test.cpp.o  -o main  
