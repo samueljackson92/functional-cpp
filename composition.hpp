@@ -28,7 +28,6 @@ template <typename... T> struct hana::tag_of<std::optional<T...>> {
 //------------------------------------------------------------------------------
 
 template <> struct hana::transform_impl<stdoptional_tag> {
-
     template <typename F, typename Fs>
     static constexpr auto apply(std::optional<Fs> const &b, F &&f){
         if (b) {
@@ -52,15 +51,18 @@ template <> struct hana::lift_impl<stdoptional_tag> {
 
 template <> struct hana::ap_impl<stdoptional_tag> {
   template <typename F, typename X>
-    static constexpr auto apply(X &&x, F &&f) {
-    if (f && x) {
-        auto func = f.value();
-        auto value = x.value();
-        return hana::lift<stdoptional_tag>(func(value));
-    } else {
-        return std::optional<decltype(f.value()(x.value()))>();
+    static constexpr auto apply(X &&x, F &&fs) {
+        return hana::chain(fs, [&](auto f) {
+                return hana::transform(x, f);
+                });
     }
-  }
+    /* if (f && x) { */
+    /*     auto func = f.value(); */
+    /*     auto value = x.value(); */
+    /*     return hana::lift<stdoptional_tag>(func(value)); */
+    /* } else { */
+    /*     return std::optional<decltype(f.value()(x.value()))>(); */
+    /* } */
 };
 
 //------------------------------------------------------------------------------
@@ -68,13 +70,12 @@ template <> struct hana::ap_impl<stdoptional_tag> {
 //------------------------------------------------------------------------------
 
 template <> struct hana::flatten_impl<stdoptional_tag> {
-
     template <typename X>
-        static constexpr auto apply(X &&x)  {
-            if(x) {
-               return x.value();
-            } else {
-               return typename std::decay<decltype(x.value())>::type ();
-            }
+    static constexpr auto apply(X &&x)  {
+        if(x.has_value()) {
+           return x.value();
+        } else {
+           return std::decay_t<decltype(x.value())>();
         }
+    }
 };

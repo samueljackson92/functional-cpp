@@ -4,3 +4,6 @@
 [submodule "hana"]
 	path = hana
 	url = http://github.com/boostorg/hana
+[submodule "range-v3"]
+	path = range-v3
+	url = git@github.com:ericniebler/range-v3.git

@@ -4,17 +4,32 @@
 #include <string>
 #include <numeric>
 #include <functional>
+#include <range/v3/all.hpp>
 #include "composition.hpp"
 
 //------------------------------------------------------------------------------
 // Generic Functions for testing
 //------------------------------------------------------------------------------
 
-auto addThree (std::vector<int>& v) -> std::vector<int> {
+auto addThree (std::vector<int> v) -> std::vector<int> {
     std::transform(v.begin(), v.end(), v.begin(),
                    [](const auto val) { return val + 3; });
     return v;
 }
+
+auto timeTwo (std::vector<int> v) -> std::vector<int> {
+    std::transform(v.begin(), v.end(), v.begin(),
+                   [](const auto val) { return val * 2; });
+    return v;
+}
+
+auto allToString (std::vector<int> v) -> std::vector<std::string> {
+    std::vector<std::string> s;
+    std::transform(v.begin(), v.end(), std::back_inserter(s),
+                   [](auto i) { return std::to_string(i); });
+    return s;
+}
+
 
 auto sum(const std::vector<int>& v) -> int {
     return std::accumulate(v.begin(), v.end(), 0);
@@ -93,6 +108,16 @@ auto identity(const IntegerHKL& hkl) {
 // Test Cases
 //------------------------------------------------------------------------------
 
+TEST_CASE( "Higher Order", "[High]") {
+    auto applyThrice = [](auto f, auto x) {
+        return f(f(f(x)));
+    };
+
+    auto value = applyThrice([](auto x) { return x*3; }, 3);
+    REQUIRE( value == 81 );
+
+}
+
 TEST_CASE( "Composition of Functions", "[composition]" ) {
 
     auto pipeline = compose(toString, sum, addThree);
@@ -100,6 +125,47 @@ TEST_CASE( "Composition of Functions", "[composition]" ) {
     auto x = pipeline(std::move(n)); 
 
     REQUIRE( x == "21" );
+}
+
+TEST_CASE( "Slow Composition", "[Lazy]" ) {
+    std::vector<int> n = { 3, 4, 5 };
+    auto f = compose(allToString, timeTwo, addThree);
+    auto xs = f(n);
+    REQUIRE( xs[0] == "12" );
+    REQUIRE( xs[1] == "14" );
+    REQUIRE( xs[2] == "16" );
+}
+
+TEST_CASE( "Lazy Composition", "[Lazy]" ) {
+    std::vector<int> n = { 3, 4, 5 };
+
+    auto xs = n 
+        | ranges::view::transform([](auto x) { return x+3; })
+        | ranges::view::transform([](auto x) { return x*2; })
+        | ranges::view::transform([](auto x) { return std::to_string(x); });
+
+    // roughly equivilent to
+    // for (auto & val : values) {
+    // h(g(f(x)));
+    // }
+
+    REQUIRE( xs[0] == "12" );
+    REQUIRE( xs[1] == "14" );
+    REQUIRE( xs[2] == "16" );
+}
+
+TEST_CASE( "Error handling", "[Error]") {
+    
+    auto foo = [](int x) {
+        if ( x < 5 ) {
+            return std::make_optional(x);
+        } else {
+            return std::optional<int>();
+        }
+    };
+
+    REQUIRE( foo(3).value() == 3 );
+    REQUIRE( !foo(5) );
 }
 
 TEST_CASE( "Currying Functions", "[currying]" ) {
@@ -149,21 +215,48 @@ TEST_CASE( "Applicative Functions", "[applicatives]" ) {
     REQUIRE ( !x );
 }
 
+TEST_CASE( "Simple Monad", "[Monad]") {
+    auto foo = [](auto x) {
+        if ( x < 5 ) {
+            return std::make_optional(x*2);
+        } else {
+            return std::optional<decltype(x)>();
+        }
+    };
+
+    auto bar = hana::monadic_compose(foo, foo);
+    REQUIRE( bar(1).value() == 4 );
+    REQUIRE( bar(2).value() == 8 );
+    REQUIRE( !bar(3) );
+}
+
 TEST_CASE( "Monadic Functions", "[HKL]" ) {
     std::vector<double> vec1 = { 1.02, 1.05, 1.01 };
     std::vector<double> vec2 = { 1.5, 1.5, 1.5 };
     std::vector<double> vec3 = { 0, 0, 0 };
     std::vector<double> empty;
 
+    auto curryTransform = hana::curry<2>([](auto f, auto v) {
+      return hana::transform(v, f);
+    });
+
     // curry a function prior to composition
     auto cubicDSpacingCurried = hana::curry<2>(cubicDSpacing);
     auto pyriteDSpacing = cubicDSpacingCurried(5.47);
 
+    // swap args and curry so we can compose
+    // monadically compose the two functions together
     auto p1 = hana::monadic_compose(convertProtoToInteger, createProtoHKL);
-    auto pipeline = hana::monadic_compose(pyriteDSpacing, p1);
+    // compose non-monadic function with pipeline
+    auto pipeline = hana::compose(curryTransform(pyriteDSpacing), p1);
+    auto x = pipeline(vec1);
 
-    REQUIRE( pipeline(std::move(vec1))  == Approx(3.15).epsilon(0.01) );
-    REQUIRE( !pipeline(std::move(vec2)));    // fails to convert to IntegerHKL
-    REQUIRE( !pipeline(std::move(vec3)) );   // fails to convert to IntegerHKL
-    REQUIRE( !pipeline(std::move(empty)) );  // fails to convert to ProtoHKL
+    REQUIRE( x.has_value() );
+    REQUIRE( x.value() == Approx(3.15).epsilon(0.01) );
+
+    REQUIRE( !pipeline(vec2));   // fails to convert to IntegerHKL
+    REQUIRE( !pipeline(vec3));   // fails to convert to IntegerHKL
+    REQUIRE( !pipeline(empty));  // fails to convert to ProtoHKL
 }
+
+

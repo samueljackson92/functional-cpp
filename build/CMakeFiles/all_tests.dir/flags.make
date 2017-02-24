@@ -6,5 +6,5 @@ CXX_FLAGS = -std=c++1z
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/Users/samueljackson/git/functional-cpp/Catch/include -I/Users/samueljackson/git/functional-cpp/hana/include 
+CXX_INCLUDES = -I/Users/samueljackson/git/functional-cpp/Catch/include -I/Users/samueljackson/git/functional-cpp/hana/include -I/Users/samueljackson/git/functional-cpp/range-v3/include 
 
