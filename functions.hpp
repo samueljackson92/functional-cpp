@@ -116,13 +116,6 @@ template <> struct hana::ap_impl<stdoptional_tag> {
                 return hana::transform(x, f);
                 });
     }
-    /* if (f && x) { */
-    /*     auto func = f.value(); */
-    /*     auto value = x.value(); */
-    /*     return hana::lift<stdoptional_tag>(func(value)); */
-    /* } else { */
-    /*     return std::optional<decltype(f.value()(x.value()))>(); */
-    /* } */
 };
 
 //------------------------------------------------------------------------------
